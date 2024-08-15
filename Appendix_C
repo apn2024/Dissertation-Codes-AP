@@ -1,0 +1,65 @@
+%This code generates Figures 3.3 and 3.4 in section 3.2.3
+% Additional colors were added after (Figure & Format settings)
+clear all;
+close all;
+% Clean extracted data from the .csv file
+data_benefit = readtable('TotalFRAUDper_Benefit.csv');
+
+% Relevant data
+years = data_benefit.Year;
+universal_credit = data_benefit.Universal_Credit;
+personal_independence_payment = data_benefit.Personal_Independence_Payment;
+housing_benefit = data_benefit.Housing_Benefit;
+employment_support_allowance = data_benefit.Employment_and_Support_Allowance;
+pension_credit = data_benefit.Pension_Credit;
+carers_allowance = data_benefit.Carers_Allowance;
+jobseekers_allowance = data_benefit.Jobseekers_Allowance;
+income_support = data_benefit.Income_Support;
+disability_living_allowance = data_benefit.Disability_Living_Allowance;
+
+%  Plot to compare Tendency of fraud per benefit from 2006 to 2023 Note: 
+% These are fraud values only, not claimant or official error
+figure;
+hold on;
+plot(years, universal_credit, '-o', 'DisplayName', 'Universal Credit');
+plot(years, personal_independence_payment, '-x', 'DisplayName', 'Personal Independence Payment');
+plot(years, housing_benefit, '-s', 'DisplayName', 'Housing Benefit');
+plot(years, employment_support_allowance, '-d', 'DisplayName', 'Employment and Support Allowance');
+plot(years, pension_credit, '-^', 'DisplayName', 'Pension Credit');
+plot(years, carers_allowance, '-v', 'DisplayName', 'Carers Allowance');
+plot(years, jobseekers_allowance, '-<', 'DisplayName', 'Jobseekers Allowance');
+plot(years, income_support, '->', 'DisplayName', 'Income Support');
+plot(years, disability_living_allowance, '-p', 'DisplayName', 'Disability Living Allowance');
+hold off;
+
+% Relevant titles and labels
+title('Fraud Tendency per Benefit 2006 -2023');
+xlabel('Year');
+ylabel('Amount');
+legend('show');
+grid on;
+
+% Zoomed plot with limited y-axis range for better visualisation of
+% benefits different than Universal credit and Housing Benefit
+figure;
+hold on;
+plot(years, universal_credit, '-o', 'DisplayName', 'Universal Credit');
+plot(years, personal_independence_payment, '-x', 'DisplayName', 'Personal Independence Payment');
+plot(years, housing_benefit, '-s', 'DisplayName', 'Housing Benefit');
+plot(years, employment_support_allowance, '-d', 'DisplayName', 'Employment and Support Allowance');
+plot(years, pension_credit, '-^', 'DisplayName', 'Pension Credit');
+plot(years, carers_allowance, '-v', 'DisplayName', 'Carers Allowance');
+plot(years, jobseekers_allowance, '-<', 'DisplayName', 'Jobseekers Allowance');
+plot(years, income_support, '->', 'DisplayName', 'Income Support');
+plot(years, disability_living_allowance, '-p', 'DisplayName', 'Disability Living Allowance');
+hold off;
+
+% Title and labels
+title('Fraud Tendency per Benefit 2006 -2023 (Zoomed In)');
+xlabel('Year');
+ylabel('Amount £Million');
+legend('show');
+grid on;
+
+% Y-axis limit to display benefits below £1billion in overpayment
+ylim([0 1000]);
