@@ -1,0 +1,82 @@
+% This code calculates 3.2.5 Polynomial regression and Good fit and 
+% 3.2.6 Relative Risk and Contingency table, generates Figure 3.6
+
+clear all;
+close all;
+% Data - Proportions calculated amounts overpaid in Fraud and error / Expenditure per year
+data = readtable('Proportion_Fraud_and_error.csv');
+% Relevant columns extracted from data Proportions file
+year = data.Year;
+fraud_expenditure = data.Fraud_Expenditure;
+total_fraud_error = data.Total_Fraud_and_Error_Expenditure;
+
+% Polynomial regression (degree 2) for Goodness of Fit
+[p, S, mu] = polyfit(year, fraud_expenditure, 2);
+
+% Fit assessment
+[y_fit, delta] = polyval(p, year, S, mu);
+R2 = 1 - (S.normr/norm(fraud_expenditure - mean(fraud_expenditure)))^2;
+n = length(fraud_expenditure);
+p_val = 3; % number of predictors including the intercept
+adj_R2 = 1 - (1-R2)*(n-1)/(n-p_val);
+
+% Plot polynomial regression Total FRAUD (Only) / Against Total Expenditure
+figure(1);
+scatter(year, fraud_expenditure); % Plot observed data points
+hold on;
+plot(year, y_fit); % Plot fitted polynomial regression line
+xlabel('Year');
+ylabel('Fraud / Expenditure Proportion'); % Extracts Column FRAUD only excel 
+title('Polynomial Regression Fit (Degree 2)'); % degree 2 = quadratic model y=ax^2+bx+c
+legend('Observed Fraud Proportion', 'Fitted Fraud Proportion'); % Observed data points = data reported.
+grid on;
+
+% Display goodness of fit measures
+fprintf('R-squared: %.3f\n', R2);
+fprintf('Adjusted R-squared: %.3f\n', adj_R2);
+
+% Interpretation of goodness of fit
+if R2 > 0.7
+   disp('The model explains a large proportion of the variance in the data. Good fit.')
+elseif R2 > 0.5
+   disp('The model explains a moderate proportion of the variance in the data. Acceptable fit.')
+else
+   disp('The model explains a small proportion of the variance in the data. Poor fit.')
+end
+
+% Total Fraud and Error Expenditure/ expenditure classified into categories
+bins = [0, 1, 2, 3, 4, 5];
+labels = {'Very Low', 'Low', 'Medium', 'High', 'Very High'};
+error_category = discretize(data.Total_Fraud_and_Error_Expenditure, bins, 'categorical', labels);
+
+% Display discretised categories
+disp(table(year, total_fraud_error, error_category));
+% Contingency table to display the classification of total fraud and error expenditure into categories
+[contingency_table, ~] = crosstab(year, error_category);
+
+% Display contingency table
+disp('Contingency Table:');
+disp(array2table(contingency_table, 'VariableNames', labels, 'RowNames', unique(cellstr(num2str(year)))));
+
+% Calculate Relative Risk
+% High and low risk categories
+high_risk_categories = {'High', 'Very High'};
+low_risk_categories = {'Very Low', 'Low'};
+% Count occurrences in high and low risk categories
+high_risk_count = sum(ismember(error_category, high_risk_categories));
+low_risk_count = sum(ismember(error_category, low_risk_categories));
+
+% Calculate the total number of entries
+total_entries = length(error_category);
+
+% Calculate probabilities for Relative Risk
+high_risk_prob = high_risk_count / total_entries; % percentage of the 
+% observations that fall into the high-risk categories (High or Very High).
+
+low_risk_prob = low_risk_count / total_entries; % percentage of the
+% observations that fall into the low-risk categories (Very Low or Low).
+
+% Calculate Relative Risk
+relative_risk = high_risk_prob / low_risk_prob;
+% Display Relative Risk
+fprintf('Relative Risk: %.3f\n', relative_risk);
