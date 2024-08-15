@@ -1,0 +1,115 @@
+%This code computes calculation in section 3.2.10 for the Refined Model 2
+% and Figure 3.20 (residual plot Model 2) Additional colours set up after 
+clear all;
+close all;
+
+% % Data clean and prepared 
+data = readtable('Regression_Data.csv');
+
+% Dependent variable: Fraud_Expenditure
+Y = data.Fraud_Error_Expenditure_Proportion;
+
+% Independent variables for refined model (ONLY Three variables)
+X_refined = [data.GDP, data.Inflation, data.Expenditure_Variation];
+
+% Variable names for refined model
+var_names_refined = {'GDP', 'Inflation', 'Expenditure_Variation'};
+
+% Calculation mean, variance, and standard deviation for Fraud_Expenditure
+mu = mean(Y);
+variance = var(Y);
+sigma = std(Y);
+
+% Display Calculated statistics
+fprintf('Mean (mu) of Fraud_Expenditure: %.4f\n', mu);
+fprintf('Variance of Fraud_Expenditure: %.4f\n', variance);
+fprintf('Standard Deviation (sigma) of Fraud_Expenditure: %.4f\n', sigma);
+
+% Fit linear model with Fraud_Expenditure as the dependent variable
+model_refined = fitlm(X_refined, Y, 'VarNames', [var_names_refined, {'Fraud_Expenditure'}]);
+
+% Display the model summary
+disp(model_refined);
+
+% Regression coefficients
+coefficients_refined = model_refined.Coefficients.Estimate;
+
+% Calculate residuals and noise coefficient (standard deviation of residuals)
+residuals_refined = model_refined.Residuals.Raw;
+noise_coeff_refined = std(residuals_refined);
+
+% Regression coefficients and noise coefficient
+fprintf('Intercept: %.4f\n', coefficients_refined(1));
+for i = 2:length(coefficients_refined)
+    fprintf('Beta (%s): %.4f\n', var_names_refined{i-1}, coefficients_refined(i));
+end
+fprintf('Noise Coefficient (Standard Deviation of Residuals): %.4f\n', noise_coeff_refined);
+
+% Confidence intervals for the coefficients
+conf_intervals_refined = coefCI(model_refined);
+
+% Display the confidence intervals
+fprintf('\nConfidence Intervals for Coefficients:\n');
+fprintf('Intercept: [%.4f, %.4f]\n', conf_intervals_refined(1,1), conf_intervals_refined(1,2));
+for i = 2:length(coefficients_refined)
+    fprintf('Beta (%s): [%.4f, %.4f]\n', var_names_refined{i-1}, conf_intervals_refined(i,1), conf_intervals_refined(i,2));
+end
+
+% Create a table for the regression coefficients, noise coefficient, and confidence intervals
+results_table_refined = table(['Intercept'; var_names_refined'], coefficients_refined, ...
+    [conf_intervals_refined(1,1); conf_intervals_refined(2:end,1)], ...
+    [conf_intervals_refined(1,2); conf_intervals_refined(2:end,2)], ...
+    'VariableNames', {'Coefficient', 'Estimate', 'CI_Lower', 'CI_Upper'});
+
+% Table results
+disp(results_table_refined);
+
+% Calculate VIF for each predictor
+fprintf('\nVariance Inflation Factors (VIF):\n');
+for i = 1:length(var_names_refined)
+    vif_value = calculateVIF(X_refined(:, i), X_refined);
+    fprintf('VIF (%s): %.4f\n', var_names_refined{i}, vif_value);
+end
+
+% Residual Plot Calculations for refined model 2
+years = data.Year; 
+independent_vars_refined = X_refined;
+
+% Add a column of ones for the intercept term
+X_refined_with_intercept = [ones(size(independent_vars_refined, 1), 1), independent_vars_refined];
+y = Y;
+
+% Linear regression coefficients for refined model 2
+b_refined = X_refined_with_intercept\y;
+% Calculate the predicted values
+y_pred_refined = X_refined_with_intercept * b_refined;
+
+% Calculate the residuals
+residuals_refined = y - y_pred_refined;
+
+% Calculate standard error of regression
+n = length(y);
+p = size(X_refined_with_intercept, 2);
+sigma_hat = sqrt(sum(residuals_refined.^2) / (n - p));
+
+% Calculate standardized residuals
+standardized_residuals = residuals_refined / sigma_hat;
+
+% Plot standardized residuals
+figure;
+scatter(years, standardized_residuals);
+hline = refline(0, 0);
+hline.Color = 'r';
+xlabel('Year');
+ylabel('Standardised Residuals');
+title('Standardised Residual Plot - Refined Regression (Model 2)');
+grid on;
+
+
+% Function to calculate VIF
+function vif_value = calculateVIF(X_col, X)
+    X_others = X(:, setdiff(1:size(X, 2), find(X(1, :) == X_col(1))));
+    model = fitlm(X_others, X_col);
+    R_squared = model.Rsquared.Ordinary;
+    vif_value = 1 / (1 - R_squared);
+end
