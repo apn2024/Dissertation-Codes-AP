@@ -1,0 +1,45 @@
+% This code generates Pareto Chart (Figure 3.5) in section 3.2.4. 
+% Additional colors were added after (Figure & Format settings)
+
+clear all;
+close all;
+% Data for the Pareto chart (Totals per benefit from 2006 to 2023)
+benefits = {'Universal Credit', 'Housing Benefit Total', 'Employment and Support Allowance', ...
+            'Pension Credit', 'Income Support Total', 'Carer''s Allowance', ...
+            'Jobseeker''s Allowance', 'Disability Living Allowance', ...
+            'Personal Independence Payment'};
+total_amount = [17253, 9150, 2290, 2290, 2130, 1420, 1410, 910, 470];
+
+% Values to be expressed in millions
+total_amount_millions = total_amount / 1000;
+
+% Data sorted in descending order for Pareto chart
+[sorted_amounts, sort_index] = sort(total_amount_millions, 'descend');
+sorted_benefits = benefits(sort_index);
+
+% Calculate Cumulative percentage
+cumulative_percentage = cumsum(sorted_amounts) / sum(sorted_amounts) * 100;
+
+% Plot Pareto Chart
+figure;
+bar(sorted_amounts);
+hold on;
+yyaxis right;
+plot(cumulative_percentage, '-o', 'Color', 'r');
+hold off;
+
+% Title and labels
+title('Pareto Chart - Benefit Fraud Amounts Overpaid 2006 - 2023');
+xlabel('Benefit Type');
+ylabel('Total Amount (£ Billions)');
+yyaxis left;
+ylabel('Total Amount (£ Billions)');
+yyaxis right;
+ylabel('Cumulative Percentage');
+ylim([0 100]);
+
+xticks(1:length(sorted_benefits));
+xticklabels(sorted_benefits);
+xtickangle(45);
+yticks(0:10:100);
+grid on;
