@@ -1,0 +1,125 @@
+%This code computes calculation in section 3.2.10 and generates Figures 3.13 
+% to 3.19 (residual plot Model 1) Additional colours set up after 
+clear all;
+close all;
+
+% Data clean and prepared - (all variables used in Correlation)
+data = readtable('Regression_Data.csv');
+
+% Dependent variable: Fraud_Expenditure
+Y = data.Fraud_Error_Expenditure_Proportion;
+
+% Independent variables
+X = [data.GDP, data.Inflation, data.Income, data.Unemployment, data.Total_Population, data.Learning_Development, data.Expenditure_Variation];
+
+% Variable names
+var_names = {'GDP', 'Inflation', 'Income', 'Unemployment', 'Total_Population', 'Learning_Development', 'Expenditure_Variation'};
+
+% Calculation mean, variance, and standard deviation for Fraud_Expenditure
+mu = mean(Y);
+variance = var(Y);
+sigma = std(Y);
+
+% Display Calculated statistics
+fprintf('Mean (mu) of Fraud_Expenditure: %.4f\n', mu);
+fprintf('Variance of Fraud_Expenditure: %.4f\n', variance);
+fprintf('Standard Deviation (sigma) of Fraud_Expenditure: %.4f\n', sigma);
+
+% Fit linear model with Fraud_Expenditure as the dependent variable
+model = fitlm(X, Y, 'VarNames', [var_names, {'Fraud_Expenditure'}]);
+
+% Display the model summary
+disp(model);
+
+% Regression coefficients
+coefficients = model.Coefficients.Estimate;
+
+% Calculate residuals and noise coefficient (standard deviation of residuals)
+residuals = model.Residuals.Raw;
+noise_coeff = std(residuals);
+
+% Regression coefficients and noise coefficient
+fprintf('Intercept: %.4f\n', coefficients(1));
+for i = 2:length(coefficients)
+    fprintf('Beta (%s): %.4f\n', var_names{i-1}, coefficients(i));
+end
+fprintf('Noise Coefficient (Standard Deviation of Residuals): %.4f\n', noise_coeff);
+
+% Confidence intervals (CI) for the coefficients
+conf_intervals = coefCI(model);
+
+% Display the confidence intervals
+fprintf('\nConfidence Intervals for Coefficients:\n');
+fprintf('Intercept: [%.4f, %.4f]\n', conf_intervals(1,1), conf_intervals(1,2));
+for i = 2:length(coefficients)
+    fprintf('Beta (%s): [%.4f, %.4f]\n', var_names{i-1}, conf_intervals(i,1), conf_intervals(i,2));
+end
+
+% Table for the regression coefficients, noise coefficient, and CI
+results_table = table(['Intercept'; var_names'], coefficients, ...
+    [conf_intervals(1,1); conf_intervals(2:end,1)], ...
+    [conf_intervals(1,2); conf_intervals(2:end,2)], ...
+    'VariableNames', {'Coefficient', 'Estimate', 'CI_Lower', 'CI_Upper'});
+
+% Table results
+disp(results_table);
+
+% Calculate Variance Inflation Factors (VIF) for each predictor
+fprintf('\nVariance Inflation Factors (VIF):\n');
+for i = 1:length(var_names)
+    vif_value = calculateVIF(X(:, i), X);
+    fprintf('VIF (%s): %.4f\n', var_names{i}, vif_value);
+end
+
+% Residual Plot Calculations
+years = data.Year; 
+numeric_data = data{:,:};
+% Extract FraudExpenditure'column as dependent variable
+dependent_var = numeric_data(:,1); 
+independent_vars = numeric_data(:,2:end); % Remaining independent variables
+
+% Add a column of ones for the intercept term
+X = [ones(size(independent_vars, 1), 1), independent_vars];
+y = dependent_var;
+
+% Linear regression coefficients
+b = X\y;
+% Calculate the predicted values
+y_pred = X * b;
+
+% Calculate the residuals
+residuals = y - y_pred;
+
+% Calculate standard error of regression
+n = length(y);
+p = size(X, 2);
+sigma_hat = sqrt(sum(residuals.^2) / (n - p));
+
+% Calculate standardized residuals
+standardized_residuals = residuals / sigma_hat;
+
+% Calculate R-squared
+SST = sum((y - mean(y)).^2);
+SSR = sum((y_pred - mean(y)).^2);
+R_squared = SSR / SST;
+
+% Display R-squared
+fprintf('R-squared: %.4f\n', R_squared);
+
+% Plot standardized residuals with years on the x-axis
+figure;
+scatter(years, standardized_residuals);
+hline = refline(0, 0);
+hline.Color = 'r';
+xlabel('Year');
+ylabel('Standardised Residuals');
+title('Standardised Residual Plot - Regression (Model 1)');
+grid on;
+
+% Function to calculate VIF
+function vif_value = calculateVIF(X_col, X)
+    X_others = X(:, setdiff(1:size(X, 2), find(X(1, :) == X_col(1))));
+    model = fitlm(X_others, X_col);
+    R_squared = model.Rsquared.Ordinary;
+    vif_value = 1 / (1 - R_squared);
+end
