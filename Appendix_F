@@ -1,0 +1,106 @@
+%This code computes all calculation for section 3.2.7 and generates
+% Figure 3.7. Additional colors were added after (Figure & Format settings)
+clear all;
+close all;
+
+% Data - Proportions calculated amounts overpaid in Fraud and error / Expenditure per year
+data = readtable('Proportion_Fraud_and_error.csv');
+% Relevant columns (Proportion Fraud / Expenditure)
+year = data.Year;
+fraud_expenditure = data.Fraud_Expenditure;
+
+% Null Hypothesis: No relationship between year and fraud/expenditure 
+% Proportion
+% significance level
+alpha = 0.05;
+
+% Perform Pearson Correlation Test
+[r, p_corr] = corr(year, fraud_expenditure);
+% Display Pearson correlation test results
+fprintf('Pearson Correlation Coefficient: %.3f\n', r);
+fprintf('Pearson p-value: %.3f\n', p_corr);
+[rho, p_spearman] = corr(year, fraud_expenditure, 'Type', 'Spearman');
+fprintf('Spearman Rank Correlation Coefficient: %.3f\n', rho);
+fprintf('Spearman p-value: %.3f\n', p_spearman);
+
+% Test for normality
+[h, p_normal] = adtest(fraud_expenditure); % Anderson-Darling test
+fprintf('Normality test p-value: %.3f\n', p_normal);
+if p_normal < alpha
+   fprintf('Data does not follow a normal distribution.\n');
+else
+   fprintf('Data follows a normal distribution.\n');
+end
+
+% Hypothesis Test Result
+if p_corr < alpha
+   fprintf('Reject the null hypothesis at %.2f significance level\n', alpha);
+   fprintf('Conclusion: There is a significant relationship between the year and the fraud/expenditure Proportion.\n');
+else
+   fprintf('Fail to reject the null hypothesis at %.2f significance level\n', alpha);
+   fprintf('Conclusion: There is no significant relationship between the year and the fraud/expenditure Proportion.\n');
+end
+
+% Enhanced Scatter Plot
+figure;
+scatter(year, fraud_expenditure, 'filled');
+hold on;
+
+% Fit a linear model and get additional statistics
+[p, S] = polyfit(year, fraud_expenditure, 1);
+[y_fit, delta] = polyval(p, year, S);
+plot(year, y_fit, 'r--');
+xlabel('Year');
+ylabel('Fraud / Expenditure Proportion');
+title('Fraud / Expenditure Proportion 2006 - 2023');
+legend('Data points', 'Trend line');
+grid on;
+
+% Confidence intervals
+crit_t = tinv(0.975, length(year) - 2); % Critical t-value for 95% confidence interval with n-2 degrees of freedom
+ci_upper = y_fit + crit_t * delta;
+ci_lower = y_fit - crit_t * delta;
+plot(year, ci_upper, 'b--', 'LineStyle', '--'); % Plot upper confidence interval (blue dashed line)
+plot(year, ci_lower, 'b--', 'LineStyle', '--'); % Plot lower confidence interval (blue dashed line)
+
+% Calculation Confidence intervals for the correlation coefficient
+z = 0.5 * log((1+r)/(1-r)); % Fisher's Z transformation
+se = 1 / sqrt(length(year) - 3);
+z_crit = norminv(1 - alpha/2);
+ci_low = tanh(z - z_crit * se);
+ci_high = tanh(z + z_crit * se);
+fprintf('95%% Confidence Interval for correlation coefficient: [%.3f, %.3f]\n', ci_low, ci_high);
+
+% Legend notes
+legend('Data points', 'Trend line', '95% Confidence Interval', 'Location', 'best');
+
+% Summary Table
+summary_table = table(year, fraud_expenditure, 'VariableNames', {'Year', 'Fraud_Expenditure_Proportion'});
+disp(summary_table);
+
+% Display additional statistics
+fprintf('\nAdditional Statistics:\n');
+fprintf('Mean Fraud/Expenditure Proportion: %.4f\n', mean(fraud_expenditure));
+fprintf('Standard Deviation: %.4f\n', std(fraud_expenditure));
+fprintf('Minimum: %.4f\n', min(fraud_expenditure));
+fprintf('Maximum: %.4f\n', max(fraud_expenditure));
+
+% Table for Null and Alternative Hypothesis
+hypothesis_table = table(...
+   {'H0: No significant correlation'; 'H1: Significant correlation'}, ...
+   {'ρ = 0'; 'ρ ≠ 0'}, ...
+   {'Fail to reject H0'; 'Reject H0'}, ...
+   {'p ≥ 0.05'; 'p < 0.05'}, ...
+   'VariableNames', {'Hypothesis', 'Population_Correlation', 'Decision', 'Condition'});
+
+% Display the hypothesis table
+disp('Hypothesis Testing Summary:');
+disp(hypothesis_table);
+% Acept / Reject Null Hypothesis decision based on the p-value
+if p_corr < alpha
+   decision = 'reject H0';
+else
+   decision = 'fail to reject H0';
+end
+fprintf('\nBased on the p-value (%.3f), we %s.\n', p_corr, decision);
+
