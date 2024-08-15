@@ -1,0 +1,67 @@
+%This code computes all calculation for section 3.2.9 and generates
+% Figure 3.9 and data displayed in Figure 3.12 
+clear all;
+close all;
+
+% Data clean and prepared - Macroenomic and DWP indicators
+data = readtable('Correlation_Data.csv');
+numeric_data = data{:,:};
+
+% Matrices to store correlation coefficients and p-values
+[numSamples, numVars] = size(numeric_data);
+correlation_matrix = zeros(numVars);
+p_values_matrix = zeros(numVars);
+
+% Calculate Pearson correlation coefficients and p-values
+for i = 1:numVars
+    for j = 1:numVars
+        [R, P] = corr(numeric_data(:, i), numeric_data(:, j));
+        correlation_matrix(i, j) = R;
+        p_values_matrix(i, j) = P;
+    end
+end
+
+% Display Correlation Matrix Figure 3.9
+disp('Correlation Matrix:');
+disp(array2table(correlation_matrix, 'VariableNames', data.Properties.VariableNames, 'RowNames', data.Properties.VariableNames));
+
+% Display the p-values matrix - Figire 3.12
+disp('P-values Matrix:');
+disp(array2table(p_values_matrix, 'VariableNames', data.Properties.VariableNames, 'RowNames', data.Properties.VariableNames));
+
+% Plot Correlation matrix
+figure;
+imagesc(correlation_matrix);
+colorbar;
+colormap(bluemap);
+caxis([-1 1]); % Set color axis limits to range from -1 to 1
+xticks(1:numVars);
+yticks(1:numVars);
+xticklabels(data.Properties.VariableNames);
+yticklabels(data.Properties.VariableNames);
+title('Correlation Matrix');
+
+% Add p-values to the plot (optional)
+textStrings = num2str(correlation_matrix(:), '%.2f'); % Create strings from the matrix values
+textStrings = strtrim(cellstr(textStrings)); 
+[x, y] = meshgrid(1:numVars); 
+hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center', 'FontSize', 8, 'Color', 'k');
+
+% Adjust figure properties for better colours in visualisation
+set(gca, 'XAxisLocation', 'bottom', 'TickLength', [0 0]);
+axis equal tight; % Adjust axis properties to make the plot look nicer
+
+% Blue-tone color map for Matrix
+function cmap = bluemap
+    cmap = [
+        0.9686 0.9843 1.0000
+        0.8706 0.9216 0.9686
+        0.7765 0.8588 0.9373
+        0.6196 0.7922 0.8824
+        0.4196 0.6824 0.8392
+        0.2588 0.5725 0.7765
+        0.1294 0.4431 0.7098
+        0.0314 0.3176 0.6118
+    ];
+    cmap = interp1(1:size(cmap, 1), cmap, linspace(1, size(cmap, 1), 256), 'linear');
+end
