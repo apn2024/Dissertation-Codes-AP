@@ -1,0 +1,121 @@
+%This code computes all calculation for section 3.2.8 and generates
+% Figure 3.8. Additional colors were added after (Figure & Format settings)
+
+clear all;
+close all;
+
+% Data segmented values suitable periods for analysis
+data_2006_2015 = readtable('FE_2006-2015.csv');
+data_2016_2023 = readtable('FE_2016-2023.csv');
+
+% Totals for each period
+total_fraud_2006_2015 = sum(data_2006_2015.Fraud);
+total_fraud_2016_2023 = sum(data_2016_2023.Fraud);
+total_expenditure_2006_2015 = sum(data_2006_2015.Total_Expenditure);
+total_expenditure_2016_2023 = sum(data_2016_2023.Total_Expenditure);
+total_overpaid_2006_2015 = sum(data_2006_2015.Total_Overpaid);
+total_overpaid_2016_2023 = sum(data_2016_2023.Total_Overpaid);
+
+% Calculation Odds for each type of error in each period
+odds_fraud_2006_2015 = total_fraud_2006_2015 / (total_expenditure_2006_2015 - total_overpaid_2006_2015);
+odds_fraud_2016_2023 = total_fraud_2016_2023 / (total_expenditure_2016_2023 - total_overpaid_2016_2023);
+odds_ratio_fraud = odds_fraud_2016_2023 / odds_fraud_2006_2015;
+
+% Calculations for claimant and official errors
+total_claimant_error_2006_2015 = sum(data_2006_2015.Claimant_Error);
+total_claimant_error_2016_2023 = sum(data_2016_2023.Claimant_Error);
+odds_claimant_2006_2015 = total_claimant_error_2006_2015 / (total_expenditure_2006_2015 - total_overpaid_2006_2015);
+odds_claimant_2016_2023 = total_claimant_error_2016_2023 / (total_expenditure_2016_2023 - total_overpaid_2016_2023);
+odds_ratio_claimant = odds_claimant_2016_2023 / odds_claimant_2006_2015;
+
+total_official_error_2006_2015 = sum(data_2006_2015.Official_Error);
+total_official_error_2016_2023 = sum(data_2016_2023.Official_Error);
+odds_official_2006_2015 = total_official_error_2006_2015 / (total_expenditure_2006_2015 - total_overpaid_2006_2015);
+odds_official_2016_2023 = total_official_error_2016_2023 / (total_expenditure_2016_2023 - total_overpaid_2016_2023);
+odds_ratio_official = odds_official_2016_2023 / odds_official_2006_2015;
+
+% Function for calculating confidence intervals
+function [ci_lower, ci_upper] = calculate_ci(odds_ratio, n1, n2)
+    % Calculate the standard error of the log of the odds ratio
+    se_log_or = sqrt(1/n1 + 1/n2);
+    z = 1.96; % Z-value for 95% CI (Normal Distribution)
+    % Calculate CI for log(odds ratio)
+    ci_log_lower = log(odds_ratio) - z * se_log_or;
+    ci_log_upper = log(odds_ratio) + z * se_log_or;
+    % Convert log CI back to the regular scale
+    ci_lower = exp(ci_log_lower);
+    ci_upper = exp(ci_log_upper);
+end
+
+% Counts for CI calculations (assuming these are the counts of fraud/non-fraud etc.)
+n1_fraud = total_fraud_2006_2015;
+n2_fraud = total_fraud_2016_2023;
+n1_claimant = total_claimant_error_2006_2015;
+n2_claimant = total_claimant_error_2016_2023;
+n1_official = total_official_error_2006_2015;
+n2_official = total_official_error_2016_2023;
+
+% Calculate confidence intervals for odds ratios
+[ci_lower_fraud, ci_upper_fraud] = calculate_ci(odds_ratio_fraud, n1_fraud, n2_fraud);
+[ci_lower_claimant, ci_upper_claimant] = calculate_ci(odds_ratio_claimant, n1_claimant, n2_claimant);
+[ci_lower_official, ci_upper_official] = calculate_ci(odds_ratio_official, n1_official, n2_official);
+
+% Print the odds ratios with confidence intervals
+fprintf('Fraud Odds Ratio: %.4f (95%% CI: %.4f - %.4f)\n', odds_ratio_fraud, ci_lower_fraud, ci_upper_fraud);
+fprintf('Claimant Error Odds Ratio: %.4f (95%% CI: %.4f - %.4f)\n', odds_ratio_claimant, ci_lower_claimant, ci_upper_claimant);
+fprintf('Official Error Odds Ratio: %.4f (95%% CI: %.4f - %.4f)\n', odds_ratio_official, ci_lower_official, ci_upper_official);
+
+% Table showing results
+results_table = table(...
+    [odds_fraud_2006_2015; odds_fraud_2016_2023; odds_ratio_fraud; ci_lower_fraud; ci_upper_fraud], ...
+    [odds_claimant_2006_2015; odds_claimant_2016_2023; odds_ratio_claimant; ci_lower_claimant; ci_upper_claimant], ...
+    [odds_official_2006_2015; odds_official_2016_2023; odds_ratio_official; ci_lower_official; ci_upper_official], ...
+    'VariableNames', {'Fraud', 'Claimant_Error', 'Official_Error'}, ...
+    'RowNames', {'2006-2015 Odds', '2016-2023 Odds', 'Odds Ratio', '95% CI Lower', '95% CI Upper'} ...
+);
+
+% Table
+disp(results_table);
+
+% Plotting the results in subplots
+figure;
+
+% Fraud Odds
+subplot(3,2,1);
+bar(categorical({'2006-2015', '2016-2023'}), [odds_fraud_2006_2015, odds_fraud_2016_2023], 'FaceColor', 'b');
+title('Fraud Odds');
+ylabel('Odds Ratios'); % Ratios of fraud and Error occurrence for each period
+
+% Fraud Odds Ratio
+subplot(3,2,2);
+bar(categorical({'Fraud Odds Ratio'}), [odds_ratio_fraud], 'FaceColor', 'b');
+title('Fraud Odds Ratio');
+ylabel('Odds Ratio');
+
+% Claimant Error Odds
+subplot(3,2,3);
+bar(categorical({'2006-2015', '2016-2023'}), [odds_claimant_2006_2015, odds_claimant_2016_2023], 'FaceColor', 'b');
+title('Claimant Error Odds');
+ylabel('Odds Ratio');
+
+% Claimant Error Odds Ratio
+subplot(3,2,4);
+bar(categorical({'Claimant Error Odds Ratio'}), [odds_ratio_claimant], 'FaceColor', 'b');
+title('Claimant Error Odds Ratio');
+ylabel('Odds Ratio');
+
+% Official Error Odds
+subplot(3,2,5);
+bar(categorical({'2006-2015', '2016-2023'}), [odds_official_2006_2015, odds_official_2016_2023], 'FaceColor', 'b');
+title('Official Error Odds');
+ylabel('Odds Ratio');
+
+% Official Error Odds Ratio
+subplot(3,2,6);
+bar(categorical({'Official Error Odds Ratio'}), [odds_ratio_official], 'FaceColor', 'b');
+title('Official Error Odds Ratio');
+ylabel('Odds Ratio');
+
+% Adjust figure properties for better visualisation
+sgtitle('Odds and Odds Ratios for Fraud, Claimant Error, and Official Error');
+set(gcf, 'Position', [100, 100, 1200, 800]);  % Set figure window size
