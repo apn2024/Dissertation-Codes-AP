@@ -1,0 +1,27 @@
+%This code generates visual image in section 3.2.2 
+% Additional colors were added after (Figure & Format settings)
+
+clear all;
+close all;
+
+% Extracted data from the Proportions calculated .csv file
+data_Proportions = readtable('Proportion_Fraud_and_error.csv');
+
+% Column names to identify the correct variable names
+disp(data_Proportions.Properties.VariableNames);
+
+% Relevant data
+years = data_Proportions{:, 'Year'};
+fraud_expenditure_Proportion = data_Proportions{:, 'Fraud_Expenditure'};
+claimant_error_expenditure_Proportion = data_Proportions{:, 'Claimant_Error_Expenditure'};
+official_error_expenditure_Proportion = data_Proportions{:, 'Official_Error_Expenditure'};
+total_fraud_error_expenditure_Proportion = data_Proportions{:, 'Total_Fraud_and_Error_Expenditure'};
+
+
+% Bars plot visualization Fraud and error / Expenditure
+figure;
+bar(years, total_fraud_error_expenditure_Proportion, 'FaceColor', 'blue');
+xlabel('Year');
+ylabel('Total Fraud and Error / Expenditure Proportion');
+title('Total Fraud and Error / Expenditure Proportion Over Years 2006 - 2023');
+grid on;
