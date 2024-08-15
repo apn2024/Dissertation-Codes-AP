@@ -1,0 +1,34 @@
+%This code generates visual image in section 3.2.1. 
+% Additional colors were added after (Figure & Format settings)
+close all;
+clear all;
+
+% Extracted data from the Excel file
+data = readtable('total_Fraud_Error_Expenditure.xlsx'); % Expenditure is 
+% the total amount spent on benefits as recorded in the file
+
+% Extract column names
+disp(head(data));
+disp(data.Properties.VariableNames);
+
+% Extract relevant columns for plot
+year = data.Year; % Years 2006 - 2023
+fraud = data.Fraud;  % Amounts overpaid due to FRAUD
+claimant_error = data.Claimant_Error; % Amounts overpaid due Claimant error
+official_error = data.Official_Error; % Amounts overpaid due Official error 
+
+% Calculate total amounts overpaid
+total_overpaid = fraud + claimant_error + official_error;
+
+% Plot Fraud Claimant Error Official Error and Total Fraud and Error during years 2006-2023
+figure;
+plot(year, fraud, '-o', 'Color', 'b'); % Blue line
+hold on;
+plot(year, claimant_error, '-s', 'Color', 'r'); % Red line
+plot(year, official_error, '-d', 'Color', 'm'); % Magenta Line
+plot(year, total_overpaid, '-x', 'Color', 'g'); % Green Line
+xlabel('Year');
+ylabel('Total Amount overpaid £Million');
+title('Fraud, Claimant Error, Official Error, and Total Fraud and Error 2006-2023');
+legend('Fraud', 'Claimant Error', 'Official Error', 'Total Fraud and Error');
+grid on;
